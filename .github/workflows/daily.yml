@@ -1,0 +1,35 @@
+name: Daily snapshot
+on:
+  schedule:
+    - cron: "35 12 * * *"   # 12:35 UTC, after the US morning open on both venues
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Fetch today's snapshot from the Apify actor
+        env: { APIFY_TOKEN: "${{ secrets.APIFY_TOKEN }}" }
+        run: python fetch.py
+      - name: Commit
+        run: |
+          git config user.name "snapshot-bot"; git config user.email "snapshot-bot@users.noreply.github.com"
+          git add data latest && git commit -m "snapshot $(date -u +%F)" || echo "nothing to commit"
+          git push
+      - name: Upload to Hugging Face (when HF_TOKEN is set)
+        if: ${{ env.HF_TOKEN != '' }}
+        env: { HF_TOKEN: "${{ secrets.HF_TOKEN }}" }
+        run: |
+          pip -q install huggingface_hub
+          hf upload --repo-type dataset brenton-keller/prediction-markets-daily latest latest --commit-message "snapshot $(date -u +%F)"
+          hf upload --repo-type dataset brenton-keller/prediction-markets-daily data/$(date -u +%F) data/$(date -u +%F)
+      - name: Upload to Kaggle (when KAGGLE_KEY is set)
+        if: ${{ env.KAGGLE_KEY != '' }}
+        env: { KAGGLE_USERNAME: "${{ secrets.KAGGLE_USERNAME }}", KAGGLE_KEY: "${{ secrets.KAGGLE_KEY }}" }
+        run: |
+          pip -q install kaggle
+          kaggle datasets version -p latest -m "snapshot $(date -u +%F)" --dir-mode zip || kaggle datasets create -p latest --dir-mode zip
