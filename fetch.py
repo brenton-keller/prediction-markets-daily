@@ -68,6 +68,7 @@ def main() -> None:
     latest = Path('latest')
     shutil.rmtree(latest, ignore_errors=True)
     shutil.copytree(out, latest)
+    shutil.copy('dataset-metadata.template.json', latest / 'dataset-metadata.json')  # Kaggle reads it from the upload dir
     (latest / 'manifest.json').write_text(json.dumps({'date': day, 'fetched_at': datetime.now(timezone.utc).isoformat(timespec='seconds'),
                                                        'rows': counts, 'source_actor': 'https://apify.com/brenton8907/prediction-markets-data'}, indent=2))
     print(json.dumps(counts))
