@@ -32,8 +32,15 @@ def api(method: str, path: str, body: dict | None = None) -> dict | list:
         return json.load(r)
 
 
-def run(inp: dict) -> list[dict]:
-    d = api('POST', f'/acts/{ACTOR}/runs?waitForFinish=300', inp)['data']
+TERMINAL = {'SUCCEEDED', 'FAILED', 'ABORTED', 'TIMED-OUT'}
+
+
+def run(inp: dict, max_wait_secs: int = 1200) -> list[dict]:
+    d = api('POST', f'/acts/{ACTOR}/runs?waitForFinish=60', inp)['data']
+    waited = 60
+    while d['status'] not in TERMINAL and waited < max_wait_secs:  # the API waits at most 60s per call; queued runs need polling
+        d = api('GET', f"/actor-runs/{d['id']}?waitForFinish=60")['data']
+        waited += 60
     if d['status'] != 'SUCCEEDED':
         raise SystemExit(f"run {d['id']} ended {d['status']}")
     items = api('GET', f"/datasets/{d['defaultDatasetId']}/items?clean=true&limit=10000")
