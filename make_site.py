@@ -16,12 +16,12 @@ def rows(name: str) -> list[dict]:
     return [json.loads(l) for l in p.open()] if p.exists() else []
 
 
-def td(v, fmt=None):
+def td(v, fmt=None, *, trusted_html: bool = False):
     if v is None:
         return '<td></td>'
     if isinstance(v, float) and fmt:
         v = fmt % v
-    return f'<td>{html.escape(str(v))}</td>'
+    return f'<td>{str(v) if trusted_html else html.escape(str(v))}</td>'
 
 
 def link(url: str | None, text: str) -> str:
@@ -34,13 +34,13 @@ def main() -> None:
     markets = rows('markets')[:40]
     settled = rows('settled')[:20]
     s_rows = ''.join(
-        f"<tr>{td(link(r.get('kalshi_url'), r.get('event_title') or r.get('title') or ''))}{td(r.get('outcome_label'))}"
-        f"{td(r.get('kalshi_price'), '%.3f')}{td(r.get('polymarket_price'), '%.3f')}{td(r.get('spread_pts'), '%.1f')}{td(r.get('net_edge_pts'), '%.1f')}"
+        f"<tr>{td(link(r.get('kalshi_url'), r.get('event_title') or r.get('title') or ''), trusted_html=True)}{td(r.get('outcome_label'))}"
+        f"{td(r.get('kalshi_yes_price'), '%.3f')}{td(r.get('polymarket_yes_price'), '%.3f')}{td(r.get('spread_pts'), '%.1f')}{td(r.get('net_edge_pts'), '%.1f')}"
         f"{td(r.get('match_score'))}</tr>" for r in spreads)
     m_rows = ''.join(
-        f"<tr>{td(r.get('source'))}{td(link(r.get('url'), (r.get('title') or '')[:90]))}{td(r.get('implied_probability'), '%.3f')}"
+        f"<tr>{td(r.get('source'))}{td(link(r.get('url'), (r.get('title') or '')[:90]), trusted_html=True)}{td(r.get('implied_probability'), '%.3f')}"
         f"{td(r.get('volume_24h'))}{td(r.get('liquidity'))}{td((r.get('close_time') or '')[:10])}</tr>" for r in markets)
-    t_rows = ''.join(f"<tr>{td(r.get('source'))}{td(link(r.get('url'), (r.get('title') or '')[:90]))}{td(r.get('result'))}</tr>" for r in settled)
+    t_rows = ''.join(f"<tr>{td(r.get('source'))}{td(link(r.get('url'), (r.get('title') or '')[:90]), trusted_html=True)}{td(r.get('result'))}</tr>" for r in settled)
     counts = ', '.join(f'{k} {v:,}' for k, v in m['rows'].items())
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Prediction Markets Daily: Kalshi + Polymarket prices, spreads and settled markets ({m['date']})</title>
