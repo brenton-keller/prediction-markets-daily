@@ -1,10 +1,10 @@
 {
-  "date": "2026-09-12",
-  "fetched_at": "2026-09-12T15:53:27+00:00",
+  "date": "2026-09-13",
+  "fetched_at": "2026-09-13T16:43:52+00:00",
   "rows": {
     "markets": 1000,
     "spreads": 0,
-    "settled": 1627
+    "settled": 1600
   },
   "source_actor": "https://apify.com/brenton8907/prediction-markets-data"
 }
